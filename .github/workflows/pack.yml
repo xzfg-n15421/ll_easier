@@ -36,16 +36,19 @@ jobs:
     - name: 🛠️ Install Lip & Prepare Environment
       run: |
         mkdir ll
+        mkdir fakecmd
         mv .\LICENSE .\ll\LL_Easier_LICENSE
         Invoke-WebRequest -Uri https://github.com/futrime/lip/releases/latest/download/lip-windows-amd64.zip -Outfile .\scripts\lip.zip
         Invoke-WebRequest -Uri https://www.7-zip.org/a/7z2401-x64.exe -Outfile .\scripts\7z_installer.exe
         .\scripts\7z_installer.exe
         unzip .\scripts\lip.zip -d .\scripts\
+        echo "@echo off" > .\fakecmd\cmd.bat
         "$env:GITHUB_WORKSPACE\scripts" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     - name: 🧰 Install LeviLamina
       working-directory: ll
       run: |
+        $env:PATH = "$($env:GITHUB_WORKSPACE)\scripts;$($env:GITHUB_WORKSPACE)\fakecmd"
         lip.exe install -y github.com/LiteLDev/LeviLamina@${{ github.event.inputs.LL_VER }}
     
     - name: ⚙️ Install LSE
@@ -68,23 +71,13 @@ jobs:
       run: |
         user_scripts.ps1
 
-    - name: 📂 Remove BDS & Get BDS Version
+    - name: 📂 Get BDS Version
       id: get_bds_core_version
       working-directory: ll
       run: |
         $res = Get-content  -Raw -Path "./.lip/metadata/github.com%2FLiteLDev%2Fbds.json" |ConvertFrom-Json
         "bds_core_version=$($res.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-        rm .\behavior_packs -Force -Recurse
-        rm .\definitions -Force -Recurse
-        rm .\resource_packs -Force -Recurse
-        rm .\bedrock_* -Force -Recurse
-        rm .\config -Force -Recurse
-        rm .\.cache -Force -Recurse
-        rm .\allowlist.json -Force
         rm .\bdsdown.exe -Force
-        rm .\permissions.json -Force
-        rm .\release-notes.txt -Force
-        rm .\server.properties -Force
     
     - name: 📦 Pack Files
       run: |
